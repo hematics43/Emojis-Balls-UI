@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Touch to Add Glowing Bouncing Balls & Emojis</title>
+  <style>
+    html, body {
+      margin: 0;
+      overflow: auto;
+      background: #000;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+    canvas {
+      display: block;
+    }
+    #ui {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.85);
+      padding: 10px;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    #ui input[type="number"] {
+      width: 60px;
+      padding: 5px;
+    }
+    #ui button, #ui label {
+      background: #222;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #ui input[type="checkbox"] {
+      transform: scale(1.2);
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <label>🎱 Balls: <input type="number" id="ballCount" min="1" value="5"></label>
+    <button onclick="addBalls()">Add Balls</button>
+    <button onclick="addEmojis()">Add Emojis</button>
+    <label><input type="checkbox" id="trailToggle" onchange="toggleTrails()"> Trails</label>
+    <label><input type="checkbox" id="pastelToggle"> Pastel Mode</label>
+    <button onclick="clearAll()">Clear All</button>
+    <span id="count">🧮 Total: 0</span>
+  </div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const pastelToggle = document.getElementById("pastelToggle");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let balls = [];
+    let emojis = ['😀','🌟','❤️','🚀','🍀','🔥','💧','⚽','🎵','🦄'];
+    let trails = false;
+
+    function toggleTrails() {
+      trails = document.getElementById("trailToggle").checked;
+    }
+
+    function randomColor(pastel = false) {
+      const hue = Math.floor(Math.random() * 360);
+      const saturation = pastel ? 70 : 100;
+      const lightness = pastel ? 85 : 60;
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
+
+    class Ball {
+      constructor(x, y, isEmoji = false) {
+        this.x = x;
+        this.y = y;
+        this.r = 20;
+        this.vx = (Math.random() - 0.5) * 6;
+        this.vy = (Math.random() - 0.5) * 6;
+        this.color = randomColor(pastelToggle.checked);
+        this.emoji = isEmoji ? emojis[Math.floor(Math.random() * emojis.length)] : null;
+      }
+
+      draw() {
+        if (this.emoji) {
+          ctx.font = "24px serif";
+          ctx.textAlign = "center";
+          ctx.fillText(this.emoji, this.x, this.y + 8);
+        } else {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.shadowColor = this.color;
+          ctx.shadowBlur = 20;
+          ctx.fill();
+        }
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x - this.r < 0 || this.x + this.r > canvas.width) this.vx *= -1;
+        if (this.y - this.r < 0 || this.y + this.r > canvas.height) this.vy *= -1;
+      }
+    }
+
+    function addBalls() {
+      const count = parseInt(document.getElementById("ballCount").value);
+      for (let i = 0; i < count; i++) {
+        balls.push(new Ball(Math.random() * canvas.width, Math.random() * canvas.height, false));
+      }
+      updateCount();
+    }
+
+    function addEmojis() {
+      const count = parseInt(document.getElementById("ballCount").value);
+      for (let i = 0; i < count; i++) {
+        balls.push(new Ball(Math.random() * canvas.width, Math.random() * canvas.height, true));
+      }
+      updateCount();
+    }
+
+    function clearAll() {
+      balls = [];
+      updateCount();
+    }
+
+    function updateCount() {
+      document.getElementById("count").textContent = `🧮 Total: ${balls.length}`;
+    }
+
+    canvas.addEventListener("click", (e) => {
+      balls.push(new Ball(e.clientX, e.clientY));
+      updateCount();
+    });
+
+    function animate() {
+      if (!trails) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = "rgba(0,0,0,0.1)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      for (let ball of balls) {
+        ball.update();
+        ball.draw();
+      }
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    animate();
+  </script>
+</body>
+</html>
